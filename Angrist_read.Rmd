@@ -1,0 +1,127 @@
+---
+title: "Importing data from Angrist & Krueger (1991)"
+output: html_document
+---
+
+
+# Research Question
+
+Angrist and Krueger (1991, Quarterly Journal of Economics) "Does Compulsory School Attendance Affect Schooling and Earnings?" is focused on estimating of the return to education. The article is accessible from https://www.jstor.org/stable/2937954
+
+The main equation of interest (that sometimes is called the Mincer equation) is given by
+$$\begin{equation}
+\log(\text{Weekly Wage}_i)=\beta_1\cdot (\text{Years of Education}_i)+X_i'\beta_2+U_i,
+\end{equation}$$
+
+where $X_i$ icludes controls such as
+
+* Race,
+* Marital status,
+* Geographical location,
+* Age.
+* Note that the sample is restricted to men only.
+
+
+# Data
+
+The data from Angrist and Krueger (1991) is available from http://economics.mit.edu/faculty/angrist/data1/data/angkru1991 
+
+1. Download the Stata version of the file (also available from the Canvas page): "NEW7080.dta"
+2. Move the file to your current working directory for R.
+3. Stata files can be imported into R using `read.dta()` from the package `foreign`.
+
+
+```{r}
+library(foreign)
+library(nlme)
+library(AER)
+Angrist<-read.dta("NEW7080.dta")
+names(Angrist)
+```
+
+
+# Re-naming the variables
+
+The dataset provided by the authors without informative variable names, so we need to change the names of the variables. The list of the names corresponding to the `v` variables can be found at http://economics.mit.edu/files/5354
+
+The following command will assign more informative names to the variables:
+```{r}
+colnames(Angrist) <-
+   c(
+  "AGE",
+  "AGEQ", 
+  "v3",
+  "EDUC", #education
+  "ENOCENT", #region dummy
+  "ESOCENT", #region dummy
+  "v7",
+  "v8",
+  "LWKLYWGE", # Log weekly wage
+  "MARRIED", #1 if married
+  "MIDATL", #region dummy
+  "MT", #region dummy
+  "NEWENG", #region dummy
+  "v14","v15",
+  "CENSUS", #70 or #80
+  "v17",
+  "QOB", #quarter of birth
+  "RACE", #1 if black, 0 otherwise
+  "SMSA", #region dummy
+  "SOATL", #region dummy
+  "v22","v23",
+  "WNOCENT", #region dummy
+  "WSOCENT", #region dummy
+  "v26",
+  "YOB" #year of birth
+  )
+
+Angrist$AGESQ=Angrist$AGEQ^2 #squared age
+
+names(Angrist)
+```
+
+# OLS of log(weekly wage) against education, race, marriage status, 9 region dummy variables, age, agesq and cohort dummies
+```{r}
+reg = lm(LWKLYWGE ~ EDUC + RACE + MARRIED+ SMSA+ NEWENG + MIDATL + ENOCENT + WNOCENT + SOATL + ESOCENT + WSOCENT + MT + AGE + AGESQ + as.factor(YOB), data = Angrist[c('LWKLYWGE', 'EDUC', 'RACE', 'MARRIED', 'SMSA', 'NEWENG', 'MIDATL', 'ENOCENT', 'WNOCENT', 'SOATL', 'ESOCENT', 'WSOCENT', 'MT', 'AGE', 'AGESQ', 'YOB')])
+
+# Print the required estimates
+options('scipen' = 100, 'digits' = 4)
+print(paste0('The estimated return to education is, ', summary(reg)$coefficients[2.1]))
+print(paste0('The standard error of the above estimate is', summary(reg)$coefficients[2,2]))
+
+
+# Calculate the confidence interval
+print(paste0('the 95% confidence interval for the return to education is', confint(reg, level = 0.95) [2,]))
+```
+
+
+# Selecting observations
+
+Following the paper, we focus on middle-aged men in the 1980 census:
+```{r}
+Angrist804049<-subset(Angrist, CENSUS==80 & YOB>=40 & YOB<=49)
+```
+
+The selected individuals were all between the ages of 40-49 at the time of the census. Therefore, they are expected to be finished with their education/studies and still too young to retire. The number of observations in the selected sample is:
+```{r}
+nrow(Angrist804049)
+```
+# Assignment 6
+
+**Tan, Zhenhao (32176232); Thomas, William (25064783); Yan, Chengdong (85105328)**
+```{r}
+With_heterosked_std = coeftest(reg,vcov=vcovHC(reg, type = "HC0"))
+print("The list of heteroskedasticity-robust standard errors are as follows:")
+print(With_heterosked_std[,2])
+print("The list of homoskedastic standard errors are as follows:")
+print(summary(reg)$coefficients[,2])
+```
+
+Here we can see that the difference between the two standard errors are not significant.
+
+
+Below we calculate the heteroskedasticity-robust 95% confidence interval, and compare it to the homoskedastic 95% confidence interval calculated in the last assignment, (0.0604258622183464, 0.0611689611178753)
+```{r}
+confint(With_heterosked_std)[2,]
+```
+As you can see that the heteroskedasticity - robust 95% confidence interval would be approximately equivalent to that calculated with homoskedastic 95% condidence interval. This proves that heteroskedasticity is not significant in this model.
