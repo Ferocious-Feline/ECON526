@@ -1,6 +1,6 @@
 ---
 title: "Assignment 8 Question 2"
-author: "Tan, Zhenhao(32176232); Thomas, William (25064783); Yan, Chengdong(85105328)"
+author: "Tan, Zhenhao; Thomas, William; Yan, Chengdong"
 output: html_document
 ---
 
