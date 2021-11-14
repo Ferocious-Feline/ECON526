@@ -1,5 +1,5 @@
 #Assignment 4 Question 4
-#Tan, Zhenhao (32176232); Thomas, William (25064783); Yan, Chendong (85105328)
+#Tan, Zhenhao ; Thomas, William ; Yan, Chendong 
 
 #part a
 p_1 = 0.5
