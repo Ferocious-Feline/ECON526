@@ -1,5 +1,5 @@
 # ECON526
-A repositories for all the coding in R I did for ECON526:
+A repositories for all the coding in R I did for ECON526, and some possible future extensions:
 
 Quite rightfully, as described by Professor Marmer, that Econometrics as a very practical subject, need coding for effecrtive actual implementations. 
 So I decide that I would not do very wrong with collecting and organizating the programming material of the work I have done for this course, both for
