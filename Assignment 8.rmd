@@ -1,0 +1,143 @@
+---
+title: "Assignment 8 Question 2"
+author: "Tan, Zhenhao(32176232); Thomas, William (25064783); Yan, Chengdong(85105328)"
+output: html_document
+---
+
+First we load the required packages
+```{r}
+library("lmtest")
+library("car")
+
+```
+
+Below we define  *HEDGP* that generates data in accordance to the heteroskedastic data generating process as described in the question, and *HODGP*, which generates homoskedastic data as required in part c and d. 
+```{r}
+HEDGP = function(n){
+	X = c(rnorm(n,0,1))
+	U = X * c(runif(n,-1,1))
+	Y = c(rep(1,n)) + X + U 
+	return(rbind(Y,X,U))
+}
+
+HODGP = function(n){
+	X = c(rnorm(n,0,1))
+	U = c(runif(n,-1,1))
+	Y = c(rep(1,n)) + X + U 
+	return(rbind(Y,X,U))
+}
+
+
+
+```
+
+
+We also define the Montecarlo function which would output the required statistics, depending on the data generating process.
+
+```{r}
+
+MC = function(DG, n){
+	hconfint = c(rep(0,1000))
+	h0confint = c(rep(0,1000))
+	h2confint = c(rep(0,1000))
+	h3confint = c(rep(0,1000))
+
+	hconfintcount = 0
+	h0confintcount = 0
+	h2confintcount = 0
+	h3confintcount = 0
+
+    for (i in (1:1000)) {
+    	D = DG(n)
+    	Y = D[1,]
+    	X = D[2,]
+        reg1 = lm(Y ~ X)
+        #homoskedastic confint, check if true parameter is in homoskedastic confint
+        if (confint(reg1)[2,][2] > 1 & confint(reg1)[2,][1] < 1) {hconfintcount = hconfintcount + 1}
+        hconfint[i] = confint(reg1)[2,][2] - confint(reg1)[2,][1]
+
+        #H0 confint, same principle applies
+        H0 = coeftest(reg1, vcov=hccm(reg1,type="hc0"))
+        if (confint(H0)[2,][2] > 1 & confint(H0)[2,][1] < 1) {h0confintcount = h0confintcount + 1}
+        h0confint[i] = confint(H0)[2,][2] - confint(H0)[2,][1]
+        
+        #H2 confint
+        H2 = coeftest(reg1, vcov=hccm(reg1,type="hc2"))
+        if (confint(H2)[2,][2] > 1 & confint(H2)[2,][1] < 1) {h2confintcount = h2confintcount + 1}
+        h2confint = confint(H2)[2,][2] - confint(H2)[2,][1]
+        
+        #H3 confint, check coverage, add 
+        H3 = coeftest(reg1,vcov=hccm(reg1,type="hc3"))
+        if (confint(H3)[2,][2] > 1 & confint(H3)[2,][1] < 1) {h3confintcount = h3confintcount + 1}
+        h3confint = confint(H3)[2,][2] - confint(H3)[2,][1]
+
+	}
+
+
+	return(rbind(hconfintcount/1000, mean(hconfint), h0confintcount/1000, mean(h0confint), h2confintcount/1000, mean(h2confint), h3confintcount/1000, mean(h3confint)))
+
+}
+
+
+```
+
+
+```{r}
+D1 = MC(HEDGP, 30)
+paste0("Coverage of Homoskedastic confint is ", D1[1])
+paste0("Average length of  Homoskedastic confint is ", D1[2])
+paste0("Coverage of H0 confint is ", D1[3])
+paste0("Average length of  H0 confint is ", D1[4])
+paste0("Coverage of H2 confint is ", D1[5])
+paste0("Average length of  H2 confint is ", D1[6])
+paste0("Coverage of H3 confint is ", D1[7])
+paste0("Average length of  H3 confint is ", D1[8])
+```
+
+H3 has the greatest coverage, but homoskedastic confint is the smallest 
+
+```{r}
+D2 = MC(HEDGP, 1000)
+paste0("Coverage of Homoskedastic confint is ", D2[1])
+paste0("Average length of  Homoskedastic confint is ", D2[2])
+paste0("Coverage of H0 confint is ", D2[3])
+paste0("Average length of  H0 confint is ", D2[4])
+paste0("Coverage of H2 confint is ", D2[5])
+paste0("Average length of  H2 confint is ", D2[6])
+paste0("Coverage of H3 confint is ", D2[7])
+paste0("Average length of  H3 confint is ", D2[8])
+```
+
+H3 has the greatest coverage, which exceeds 0.95. But homoskedastic confint is the smallest
+```{r}
+D3 = MC(HODGP, 30)
+paste0("Coverage of Homoskedastic confint is ", D3[1])
+paste0("Average length of  Homoskedastic confint is ", D3[2])
+paste0("Coverage of H0 confint is ", D3[3])
+paste0("Average length of  H0 confint is ", D3[4])
+paste0("Coverage of H2 confint is ", D3[5])
+paste0("Average length of  H2 confint is ", D3[6])
+paste0("Coverage of H3 confint is ", D3[7])
+paste0("Average length of  H3 confint is ", D3[8])
+```
+
+The homoskedastic confint has the greatest coverage, and H2 confint is the smallest in length 
+
+```{r}
+D4 = MC(HODGP, 1000)
+paste0("Coverage of Homoskedastic confint is ", D4[1])
+paste0("Average length of  Homoskedastic confint is ", D4[2])
+paste0("Coverage of H0 confint is ", D4[3])
+paste0("Average length of  H0 confint is ", D4[4])
+paste0("Coverage of H2 confint is ", D4[5])
+paste0("Average length of  H2 confint is ", D4[6])
+paste0("Coverage of H3 confint is ", D4[7])
+paste0("Average length of  H3 confint is ", D4[8])
+```
+
+There are no significant differences between coverage of the different confidence intervals, nor are there significant differences between the confidence intervals in this case where n = 1000
+
+However, across the different example size, HC3 confidence interval gives the most reliable performance: it consistently gives a coverage near 0.95 in both small (n = 30) and large (n = 1000) samples
+
+
+
